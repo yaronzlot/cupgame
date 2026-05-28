@@ -619,10 +619,6 @@
     const updates = {};
     updates[`picks/${myRole}`] = i;
 
-    // Check if this completes both picks
-    const otherRole = myRole === 'X' ? 'O' : 'X';
-    const otherPick = round.picks && round.picks[otherRole] !== undefined ? round.picks[otherRole] : null;
-
     // Update scores
     const found = i === round.hiddenCup;
     if (found) {
@@ -634,12 +630,11 @@
 
     await update(ref(db, `rooms2/${roomCode}/round`), updates);
 
-    // If both picked, reveal
-    if (otherPick !== null) {
-      // Small delay then reveal
-      setTimeout(async () => {
-        await update(ref(db, `rooms2/${roomCode}/round`), { phase: 'revealed' });
-      }, 400);
+    // Check if both picked now — reveal
+    const snap2 = await get(ref(db, `rooms2/${roomCode}/round`));
+    const updated = snap2.val();
+    if (updated && updated.picks && updated.picks.X !== undefined && updated.picks.O !== undefined) {
+      await update(ref(db, `rooms2/${roomCode}/round`), { phase: 'revealed' });
     }
   };
 
