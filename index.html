@@ -588,15 +588,13 @@
 
     const shuffleClasses = ['shuffle-left','shuffle-right','shuffle-cross'];
     let count = 0;
-    const total = 6 + Math.floor(Math.random() * 4); // 6-9 shuffles
+    const total = 4 + Math.floor(Math.random() * 3); // 4-6 shuffles
 
     const doShuffle = () => {
       if (!isShuffling) return;
       if (count >= total) {
-        // Done shuffling — move to picking phase (only host does it)
-        if (myRole === 'X') {
-          update(ref(db, `rooms2/${roomCode}/round`), { phase: 'picking' });
-        }
+        // Both players independently move to picking after shuffle ends
+        update(ref(db, `rooms2/${roomCode}/round`), { phase: 'picking' });
         return;
       }
       for (let i = 0; i < 2; i++) {
@@ -606,7 +604,7 @@
         cup.classList.add(shuffleClasses[Math.floor(Math.random() * shuffleClasses.length)]);
       }
       count++;
-      setTimeout(doShuffle, 520);
+      setTimeout(doShuffle, 450);
     };
     setTimeout(doShuffle, 300);
   }
