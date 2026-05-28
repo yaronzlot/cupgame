@@ -339,10 +339,6 @@
       <div class="cup" id="cup-1" onclick="pickCup(1)"></div>
       <div class="cup-points">?</div>
     </div>
-    <div class="cup-wrapper">
-      <div class="cup" id="cup-2" onclick="pickCup(2)"></div>
-      <div class="cup-points">?</div>
-    </div>
   </div>
 
   <button class="action-btn" id="next-btn" onclick="requestNextRound()" style="display:none">▶ סיבוב הבא</button>
@@ -409,7 +405,7 @@
   function newRoundState() {
     const types = ['old','mid','young'];
     const prize = types[Math.floor(Math.random() * 3)];
-    const hiddenCup = Math.floor(Math.random() * 3);
+    const hiddenCup = Math.floor(Math.random() * 2);
     return {
       prize,
       hiddenCup,
@@ -537,7 +533,7 @@
   }
 
   function renderCups(round, phase, picks, bothPicked) {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       const cup = document.getElementById(`cup-${i}`);
       cup.className = 'cup';
       cup.innerHTML = '';
@@ -603,7 +599,7 @@
         }
         return;
       }
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         const cup = document.getElementById(`cup-${i}`);
         cup.className = 'cup';
         void cup.offsetWidth;
