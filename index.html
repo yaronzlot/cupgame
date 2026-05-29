@@ -293,6 +293,7 @@
   <h1>משחק הכוסות</h1>
   <div class="lobby-sub">מי מסתתר מתחת?</div>
   <button class="lobby-btn btn-invite" onclick="createRoom()">🤝 צרף חבר</button>
+  <button class="lobby-btn" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:white;box-shadow:0 4px 20px rgba(231,76,60,0.4)" onclick="playVsComputer()">🤖 שחק נגד המחשב</button>
   <div class="divider">או</div>
   <input class="code-input" id="join-code" maxlength="4" placeholder="קוד חדר" oninput="this.value=this.value.replace(/\D/g,'')">
   <button class="btn-join" onclick="joinRoom()">הצטרף</button>
@@ -332,11 +333,11 @@
 
   <div class="cups-area" id="cups-area">
     <div class="cup-wrapper">
-      <div class="cup" id="cup-0" onclick="pickCup(0)"></div>
+      <div class="cup" id="cup-0" onclick="vsComputer ? pickCupLocal(0) : pickCup(0)"></div>
       <div class="cup-points">?</div>
     </div>
     <div class="cup-wrapper">
-      <div class="cup" id="cup-1" onclick="pickCup(1)"></div>
+      <div class="cup" id="cup-1" onclick="vsComputer ? pickCupLocal(1) : pickCup(1)"></div>
       <div class="cup-points">?</div>
     </div>
   </div>
@@ -380,13 +381,14 @@
     mid:   'https://yaronzlot.github.io/cupgame/images/mid.jpg',
     young: 'https://yaronzlot.github.io/cupgame/images/young.jpg',
   };
-  const PRIZES = { old: 1, mid: 2, young: 3 };
+  const PRIZES = { old: 0, mid: 0, young: 2 };
   const PRIZE_LABELS = { old: '⭐ 1 נקודה', mid: '⭐⭐ 2 נקודות', young: '⭐⭐⭐ 3 נקודות' };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
   let myRole = null; // 'X' or 'O'
+  let vsComputer = false;
   let roomCode = null;
   let unsubscribe = null;
   let lastScores = { X: 0, O: 0 };
@@ -441,6 +443,134 @@
       await navigator.clipboard.writeText(text);
       alert('הלינק הועתק! שלח לחבר 📋');
     }
+  };
+
+  // ─── VS Computer ───
+  window.playVsComputer = function() {
+    vsComputer = true;
+    myRole = 'X';
+    roomCode = 'cpu';
+    const round = newRoundState();
+    round.scores = { X: 0, O: 0 };
+    lastScores = { X: 0, O: 0 };
+    currentRound = round;
+    show('game');
+    document.getElementById('room-badge-code').textContent = 'מחשב 🤖';
+    document.getElementById('role-label-1').textContent = 'אתה 🍓';
+    document.getElementById('role-label-2').textContent = 'מחשב 🤖';
+    startLocalGame(round);
+  };
+
+  let currentRound = null;
+
+  function startLocalGame(round) {
+    currentRound = round;
+    renderLocalGame();
+    isShuffling = false;
+    doLocalShuffle(round);
+  }
+
+  function doLocalShuffle(round) {
+    isShuffling = true;
+    const shuffleClasses = ['shuffle-left','shuffle-right','shuffle-cross'];
+    let count = 0;
+    const total = 4 + Math.floor(Math.random() * 3);
+    document.getElementById('status-area').innerHTML = `<div class="status-pill">🔀 מערבב...</div>`;
+    document.getElementById('next-btn').style.display = 'none';
+
+    const doShuffle = () => {
+      if (!isShuffling) return;
+      if (count >= total) {
+        isShuffling = false;
+        currentRound.phase = 'picking';
+        renderLocalGame();
+        return;
+      }
+      for (let i = 0; i < 2; i++) {
+        const cup = document.getElementById(`cup-${i}`);
+        cup.className = 'cup';
+        void cup.offsetWidth;
+        cup.classList.add(shuffleClasses[Math.floor(Math.random() * shuffleClasses.length)]);
+      }
+      count++;
+      setTimeout(doShuffle, 450);
+    };
+    setTimeout(doShuffle, 300);
+  }
+
+  function renderLocalGame() {
+    const round = currentRound;
+    const scores = round.scores || { X: 0, O: 0 };
+    document.getElementById('score-1').textContent = scores.X;
+    document.getElementById('score-2').textContent = scores.O;
+    document.getElementById('tries-1').textContent = round.picks && round.picks.X !== undefined ? '✓ בחרת' : '';
+    document.getElementById('tries-2').textContent = round.picks && round.picks.O !== undefined ? '✓ בחר' : '';
+
+    const phase = round.phase;
+    const picks = round.picks || {};
+    const statusEl = document.getElementById('status-area');
+
+    if (phase === 'picking') {
+      const myTurn = picks.X === undefined;
+      statusEl.innerHTML = myTurn
+        ? `<div class="status-pill">👆 בחר כוס!</div>`
+        : `<div class="status-pill">🤖 המחשב בוחר...</div>`;
+    } else if (phase === 'revealed') {
+      const found = picks.X === round.hiddenCup;
+      statusEl.innerHTML = found
+        ? `<div class="status-win">🎉 מצאת! +${PRIZES[round.prize]} נקודות</div>`
+        : `<div class="status-pill" style="color:rgba(255,100,100,0.8)">😔 לא מצאת</div>`;
+      document.getElementById('next-btn').style.display = 'inline-block';
+    }
+
+    // Render cups
+    for (let i = 0; i < 2; i++) {
+      const cup = document.getElementById(`cup-${i}`);
+      cup.className = 'cup';
+      cup.innerHTML = '';
+      cup.style = '';
+      if (phase === 'picking' && picks.X === undefined) {
+        cup.classList.add('clickable');
+      }
+      if (phase === 'revealed') {
+        if (i === round.hiddenCup) {
+          cup.classList.add('revealed', 'winner-cup');
+          const img = document.createElement('img');
+          img.src = IMAGES[round.prize];
+          cup.appendChild(img);
+        } else {
+          cup.classList.add('empty-revealed');
+        }
+        if (picks.X === i) { cup.style.outline = '3px solid rgba(255,255,255,0.5)'; cup.style.outlineOffset = '3px'; }
+      }
+    }
+  }
+
+  window.pickCupLocal = function(i) {
+    const round = currentRound;
+    if (!round || round.phase !== 'picking') return;
+    if (round.picks && round.picks.X !== undefined) return;
+    if (!round.picks) round.picks = {};
+    round.picks.X = i;
+
+    // Score player
+    if (i === round.hiddenCup) {
+      round.scores.X = (round.scores.X || 0) + PRIZES[round.prize];
+    }
+
+    renderLocalGame();
+
+    // Computer picks after short delay
+    setTimeout(() => {
+      const cpuPick = Math.floor(Math.random() * 2);
+      round.picks.O = cpuPick;
+      if (cpuPick === round.hiddenCup) {
+        round.scores.O = (round.scores.O || 0) + PRIZES[round.prize];
+      }
+      lastScores = { ...round.scores };
+      round.phase = 'revealed';
+      renderLocalGame();
+    }, 800);
   };
 
   // ─── Join room ───
@@ -640,6 +770,12 @@
 
   // ─── Next round ───
   window.requestNextRound = async function() {
+    if (vsComputer) {
+      const round = newRoundState();
+      round.scores = { ...lastScores };
+      startLocalGame(round);
+      return;
+    }
     const round = newRoundState();
     round.scores = lastScores;
     await update(ref(db, `rooms2/${roomCode}`), { round });
@@ -667,7 +803,7 @@
   window.leaveRoom = async function() {
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     if (roomCode) { await remove(ref(db, `rooms2/${roomCode}`)); roomCode = null; }
-    myRole = null; isShuffling = false;
+    myRole = null; isShuffling = false; vsComputer = false;
     document.getElementById('lobby-err').textContent = '';
     history.replaceState({}, '', location.pathname);
     show('lobby');
