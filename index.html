@@ -333,11 +333,11 @@
 
   <div class="cups-area" id="cups-area">
     <div class="cup-wrapper">
-      <div class="cup" id="cup-0" onclick="vsComputer ? pickCupLocal(0) : pickCup(0)"></div>
+      <div class="cup" id="cup-0" onclick="handleCupClick(0)"></div>
       <div class="cup-points">?</div>
     </div>
     <div class="cup-wrapper">
-      <div class="cup" id="cup-1" onclick="vsComputer ? pickCupLocal(1) : pickCup(1)"></div>
+      <div class="cup" id="cup-1" onclick="handleCupClick(1)"></div>
       <div class="cup-points">?</div>
     </div>
   </div>
@@ -545,6 +545,11 @@
       }
     }
   }
+
+  window.handleCupClick = function(i) {
+    if (vsComputer) pickCupLocal(i);
+    else pickCup(i);
+  };
 
   window.pickCupLocal = function(i) {
     const round = currentRound;
