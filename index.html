@@ -405,9 +405,8 @@
   }
 
   function newRoundState() {
-    const types = ['old','young'];
-    const prize = types[Math.floor(Math.random() * 3)];
-    const hiddenCup = Math.floor(Math.random() * 2);
+    const prize = 'young'; // צעירה תמיד היא המטרה
+    const hiddenCup = Math.floor(Math.random() * 2); // באיזו כוס מסתתרת
     return {
       prize,
       hiddenCup,
@@ -533,14 +532,15 @@
         cup.classList.add('clickable');
       }
       if (phase === 'revealed') {
+        cup.classList.add('revealed');
+        const img = document.createElement('img');
         if (i === round.hiddenCup) {
-          cup.classList.add('revealed', 'winner-cup');
-          const img = document.createElement('img');
-          img.src = IMAGES[round.prize];
-          cup.appendChild(img);
+          cup.classList.add('winner-cup');
+          img.src = IMAGES['young'];
         } else {
-          cup.classList.add('empty-revealed');
+          img.src = IMAGES['old'];
         }
+        cup.appendChild(img);
         if (picks.X === i) { cup.style.outline = '3px solid rgba(255,255,255,0.5)'; cup.style.outlineOffset = '3px'; }
       }
     }
@@ -569,10 +569,12 @@
     setTimeout(() => {
       const cpuPick = Math.floor(Math.random() * 2);
       round.picks.O = cpuPick;
+      if (!round.scores) round.scores = { X: 0, O: 0 };
       if (cpuPick === round.hiddenCup) {
         round.scores.O = (round.scores.O || 0) + PRIZES[round.prize];
       }
-      lastScores = { ...round.scores };
+      currentRound = round;
+      lastScores = { X: round.scores.X || 0, O: round.scores.O || 0 };
       round.phase = 'revealed';
       renderLocalGame();
     }, 800);
@@ -685,15 +687,15 @@
         }
       } else if (phase === 'revealed') {
         // Reveal all
+        cup.classList.add('revealed');
+        const img = document.createElement('img');
         if (i === round.hiddenCup) {
-          cup.classList.add('revealed', 'winner-cup');
-          const img = document.createElement('img');
-          img.src = IMAGES[round.prize];
-          img.alt = round.prize;
-          cup.appendChild(img);
+          cup.classList.add('winner-cup');
+          img.src = IMAGES['young'];
         } else {
-          cup.classList.add('empty-revealed');
+          img.src = IMAGES['old'];
         }
+        cup.appendChild(img);
         // Mark picked cups
         if (picks.X === i || picks.O === i) {
           cup.style.outline = '3px solid rgba(255,255,255,0.3)';
