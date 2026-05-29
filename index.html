@@ -381,8 +381,8 @@
     mid:   'https://yaronzlot.github.io/cupgame/images/mid.jpg',
     young: 'https://yaronzlot.github.io/cupgame/images/young.jpg',
   };
-  const PRIZES = { old: 0, mid: 0, young: 2 };
-  const PRIZE_LABELS = { old: '⭐ 1 נקודה', mid: '⭐⭐ 2 נקודות', young: '⭐⭐⭐ 3 נקודות' };
+  const PRIZES = { old: 0, young: 2 };
+  const PRIZE_LABELS = { old: 'אפס 😬', young: '⭐⭐ 2 נקודות' };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
@@ -405,7 +405,7 @@
   }
 
   function newRoundState() {
-    const types = ['old','mid','young'];
+    const types = ['old','young'];
     const prize = types[Math.floor(Math.random() * 3)];
     const hiddenCup = Math.floor(Math.random() * 2);
     return {
@@ -559,7 +559,7 @@
     round.picks.X = i;
 
     // Score player
-    if (i === round.hiddenCup) {
+    if (i === round.hiddenCup && PRIZES[round.prize] > 0) {
       round.scores.X = (round.scores.X || 0) + PRIZES[round.prize];
     }
 
@@ -569,7 +569,7 @@
     setTimeout(() => {
       const cpuPick = Math.floor(Math.random() * 2);
       round.picks.O = cpuPick;
-      if (cpuPick === round.hiddenCup) {
+      if (cpuPick === round.hiddenCup && PRIZES[round.prize] > 0) {
         round.scores.O = (round.scores.O || 0) + PRIZES[round.prize];
       }
       lastScores = { ...round.scores };
