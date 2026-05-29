@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>משחק הכוסות</title>
+  <title>מבוגרת או צעירה</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Heebo:wght@400;700;900&display=swap');
 
@@ -290,7 +290,7 @@
 <!-- LOBBY -->
 <div id="lobby">
   <div class="lobby-icon">🎪</div>
-  <h1>משחק הכוסות</h1>
+  <h1>מבוגרת או צעירה</h1>
   <div class="lobby-sub">מי מסתתר מתחת?</div>
   <button class="lobby-btn btn-invite" onclick="createRoom()">🤝 צרף חבר</button>
   <button class="lobby-btn" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:white;box-shadow:0 4px 20px rgba(231,76,60,0.4)" onclick="playVsComputer()">🤖 שחק נגד המחשב</button>
@@ -312,7 +312,7 @@
 
 <!-- GAME -->
 <div id="game">
-  <div class="game-title">🎪 משחק הכוסות</div>
+  <div class="game-title">🎪 מבוגרת או צעירה</div>
   <div class="room-badge">חדר: <span id="room-badge-code"></span></div>
 
   <div class="scoreboard">
@@ -381,7 +381,7 @@
     mid:   'https://yaronzlot.github.io/cupgame/images/mid.jpg',
     young: 'https://yaronzlot.github.io/cupgame/images/young.jpg',
   };
-  const PRIZES = { old: 0, young: 2 };
+  const PRIZES = { old: 1, young: 2 };
   const PRIZE_LABELS = { old: 'אפס 😬', young: '⭐⭐ 2 נקודות' };
 
   const app = initializeApp(firebaseConfig);
@@ -436,9 +436,9 @@
     listenRoom();
 
     const url = `${location.origin}${location.pathname}?room=${code}`;
-    const text = `בוא נשחק משחק הכוסות! לחץ להצטרף: ${url}`;
+    const text = `בוא נשחק מבוגרת או צעירה! לחץ להצטרף: ${url}`;
     if (navigator.share) {
-      try { await navigator.share({ title: 'משחק הכוסות', text }); } catch(e) {}
+      try { await navigator.share({ title: 'מבוגרת או צעירה', text }); } catch(e) {}
     } else {
       await navigator.clipboard.writeText(text);
       alert('הלינק הועתק! שלח לחבר 📋');
@@ -518,7 +518,7 @@
     } else if (phase === 'revealed') {
       const found = picks.X === round.hiddenCup;
       statusEl.innerHTML = found
-        ? `<div class="status-win">🎉 מצאת! +${PRIZES[round.prize]} נקודות</div>`
+        ? `<div class="status-win">🎉 מצאת! +${PRIZES[round.prize] || 0} נקודות</div>`
         : `<div class="status-pill" style="color:rgba(255,100,100,0.8)">😔 לא מצאת</div>`;
       document.getElementById('next-btn').style.display = 'inline-block';
     }
@@ -559,7 +559,7 @@
     round.picks.X = i;
 
     // Score player
-    if (i === round.hiddenCup && PRIZES[round.prize] > 0) {
+    if (i === round.hiddenCup) {
       round.scores.X = (round.scores.X || 0) + PRIZES[round.prize];
     }
 
@@ -569,7 +569,7 @@
     setTimeout(() => {
       const cpuPick = Math.floor(Math.random() * 2);
       round.picks.O = cpuPick;
-      if (cpuPick === round.hiddenCup && PRIZES[round.prize] > 0) {
+      if (cpuPick === round.hiddenCup) {
         round.scores.O = (round.scores.O || 0) + PRIZES[round.prize];
       }
       lastScores = { ...round.scores };
