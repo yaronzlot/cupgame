@@ -519,7 +519,29 @@
       statusEl.innerHTML = found
         ? `<div class="status-win">🎉 מצאת! +${PRIZES[round.prize] || 0} נקודות</div>`
         : `<div class="status-pill" style="color:rgba(255,100,100,0.8)">😔 לא מצאת</div>`;
-      document.getElementById('next-btn').style.display = 'inline-block';
+
+      const s = round.scores || { X: 0, O: 0 };
+      if (s.X >= 10 || s.O >= 10) {
+        const playerWon = s.X >= 10;
+        setTimeout(() => {
+          document.getElementById('status-area').innerHTML =
+            playerWon
+              ? `<div class="status-win">🏆 ניצחת! המחשב ימשיך לחלום 😴</div>`
+              : `<div class="status-win" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">🤖 המחשב ניצח! תמשיך לחלום 😴</div>`;
+          document.getElementById('next-btn').textContent = '🔄 משחק חדש';
+          document.getElementById('next-btn').onclick = () => {
+            lastScores = { X: 0, O: 0 };
+            document.getElementById('next-btn').textContent = '▶ סיבוב הבא';
+            document.getElementById('next-btn').onclick = requestNextRound;
+            const round = newRoundState();
+            round.scores = { X: 0, O: 0 };
+            startLocalGame(round);
+          };
+          document.getElementById('next-btn').style.display = 'inline-block';
+        }, 1000);
+      } else {
+        document.getElementById('next-btn').style.display = 'inline-block';
+      }
     }
 
     // Render cups
@@ -710,7 +732,17 @@
       const myPick = picks[myRole];
       const found = myPick === round.hiddenCup;
       const pts = found ? PRIZES[round.prize] : 0;
-      if (found) {
+      const s = round.scores || { X: 0, O: 0 };
+      const myScore = myRole === 'X' ? s.X : s.O;
+      const theirScore = myRole === 'X' ? s.O : s.X;
+
+      if (myScore >= 10 || theirScore >= 10) {
+        const iWon = myScore >= 10;
+        statusEl.innerHTML = iWon
+          ? `<div class="status-win">🏆 ניצחת! החבר ימשיך לחלום 😴</div>`
+          : `<div class="status-win" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">😔 הפסדת! תמשיך לחלום 😴</div>`;
+        document.getElementById('next-btn').textContent = '🔄 משחק חדש';
+      } else if (found) {
         statusEl.innerHTML = `<div class="status-win">🎉 מצאת! +${pts} נקודות</div>`;
       } else {
         statusEl.innerHTML = `<div class="status-pill" style="color:rgba(255,100,100,0.8)">😔 לא מצאת</div>`;
